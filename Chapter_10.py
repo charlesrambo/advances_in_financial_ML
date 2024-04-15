@@ -56,7 +56,7 @@ def expand_call(kargs):
 
 def process_jobs_single_core(jobs):
     
-    print('We have begun processing!')
+    print('We have begun processing!\n')
     
     # Run jobs sequentially for debugging
     out = [expand_call(job) for job in jobs]
@@ -77,12 +77,16 @@ def report_progress(job_num, num_jobs, start_time):
     message += f'About {message_stats[2]:.2f} minutes left.' 
     message += '\n'
     
+    if job_num == num_jobs:
+        
+        message += 'Processing is complete!\n'
+    
     print(message)
         
 
 def process_jobs(jobs,  num_threads = 6):
     
-    print('We have begun multiprocessing!')
+    print('We have begun multiprocessing!\n')
     
     # Initialize pool and specify the number of threads
     pool = mp.Pool(processes = num_threads)
@@ -120,26 +124,40 @@ class vectorize_wrapper:
         
         self.func = np.vectorize(pyfunc)
 
+
     def __call__(self, index, *args, **kwargs):
         
         # Convert index to pandas data frame
         index_df = pd.DataFrame(index, columns = ['index'])
-        
+            
         # Convert function output to data frame
         out_df = pd.DataFrame(self.func(*args, **kwargs))
+           
+        if out_df.shape[0] == index_df.shape[0]:
+            
+            return pd.concat([index_df, out_df], axis = 1)
         
-        return pd.concat([index_df, out_df], axis = 1)
+        elif out_df.shape[1] == index_df.shape[0]:
 
+            return pd.concat([index_df, out_df.T], axis = 1)
+        
+        else:
+            
+            raise ValueError("The dimensions are inconsistent!")
+            
     def __setstate__(self, state):
+        
         self.func = np.vectorize(state)
 
     def __getstate__(self):
+        
         return self.func.pyfunc
     
   
 
-def run_multiprocess(func, index, param_dict, num_threads = 6, mp_batches = 1, 
-                linear_molecules = False):
+def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
+                       mp_batches = 1, linear_molecules = False, 
+                       prep_func = True):
     """
     Parallelize jobs, returns a data frame or series.
 
@@ -150,23 +168,30 @@ def run_multiprocess(func, index, param_dict, num_threads = 6, mp_batches = 1,
     index : list, numpy array, pandas index, or pandas series
         Used to keep track of returned observations
     num_threads : int, optional
-        The number of threads that will be used in parallel (one processor per thread). The default is 6.
+        The number of threads that will be used in parallel (one processor per thread). 
+        The default is 24.
     mp_batches : TYPE, optional
         Number of parallel batches (jobs per core). The default is 1.
     linear_molecules : boolean, optional
         Whether partitions will be linear or double-nested. The default is False.
+    prep_func: boolean, optional
+        Whether to vectorize function and make the first input the index. 
+        Functions vectorized using np.vectorize are not pickleable so care must
+        be taken to prep the functions manually.
 
     Returns
     -------
-    Pandas data frame, pandas series, or other object
+    Pandas data frame of sorted outputs
 
     """
     
-    # Modify function
-    new_func = vectorize_wrapper(func)
+    if prep_func:
+        
+        # Modify function
+        new_func = vectorize_wrapper(func)
     
     # Add index to the parameters
-    param_dict['index'] = index
+    params_dict['index'] = index
     
     # Get observations
     num_obs = len(index)
@@ -186,7 +211,7 @@ def run_multiprocess(func, index, param_dict, num_threads = 6, mp_batches = 1,
     # Creaete jobs
     for i in range(1, len(parts)):
         
-        job = {key:param_dict[key][parts[i - 1]:parts[i]] for key in param_dict}
+        job = {key:params_dict[key][parts[i - 1]:parts[i]] for key in params_dict}
         job.update({'func':new_func})
         jobs.append(job)
         
@@ -214,40 +239,41 @@ def run_multiprocess(func, index, param_dict, num_threads = 6, mp_batches = 1,
     
     return result_df      
 
-
-def test_func(a, b):
-    
-    for _ in range(100):
-        
-        continue
-    
-    return a**1 + b**2
-
-if __name__ == '__main__':
-    
-    test_df = pd.DataFrame(np.random.normal(size = (1000000, 2)), columns = ['a', 'b'])
-    
-    func_dict = {col:test_df[col] for col in test_df.columns}
-      
-    print('Multiprocessing\n')
-    
-    start_time = time.perf_counter()
-    
-    result_df = run_multiprocess(test_func, test_df.index, func_dict, 
-                                 num_threads = 6, mp_batches = 2)
-    
-    print(f'{time.perf_counter() - start_time:.5f} seconds.\n')
-    
-    del func_dict['index']
-    
-    print('Boaring way.\n')
-    
-    test_func_vec = np.vectorize(test_func)
-    
-    result_df = test_func(**func_dict)
-    
-    print(f'{time.perf_counter() - start_time:.5f} seconds.')    
-    
+# =============================================================================
+# def test_func(a, b):
+#     
+#     for _ in range(100):
+#         
+#         continue
+#     
+#     return a**1 + b**2
+# 
+# if __name__ == '__main__':
+#     
+#     test_df = pd.DataFrame(np.random.normal(size = (1000000, 2)), columns = ['a', 'b'])
+#     
+#     func_dict = {col:test_df[col] for col in test_df.columns}
+#       
+#     print('Multiprocessing\n')
+#     
+#     start_time = time.perf_counter()
+#     
+#     result_df = run_queued_multiprocessing(test_func, test_df.index, func_dict, 
+#                                  num_threads = 6, mp_batches = 2)
+#     
+#     print(f'{time.perf_counter() - start_time:.5f} seconds.\n')
+#     
+#     del func_dict['index']
+#     
+#     print('Boaring way.\n')
+#     
+#     test_func_vec = np.vectorize(test_func)
+#     
+#     result_df = test_func(**func_dict)
+#     
+#     print(f'{time.perf_counter() - start_time:.5f} seconds.')    
+#     
+# =============================================================================
             
 
     
