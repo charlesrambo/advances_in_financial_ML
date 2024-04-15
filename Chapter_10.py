@@ -167,6 +167,10 @@ def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
         Function to be parallelized. 
     index : list, numpy array, pandas index, or pandas series
         Used to keep track of returned observations
+    params_dict: dictionary
+        Contains a dictionary of the variables to input into func. The keys are
+        the argument names and the values are pandas series of the corresponding
+        values.
     num_threads : int, optional
         The number of threads that will be used in parallel (one processor per thread). 
         The default is 24.
@@ -177,7 +181,7 @@ def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
     prep_func: boolean, optional
         Whether to vectorize function and make the first input the index. 
         Functions vectorized using np.vectorize are not pickleable so care must
-        be taken to prep the functions manually.
+        be taken to prep the functions if done manually.
 
     Returns
     -------
