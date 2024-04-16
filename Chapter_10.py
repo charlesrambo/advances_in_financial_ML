@@ -77,11 +77,11 @@ def report_progress(job_num, num_jobs, start_time):
     message += f'About {message_stats[2]:.2f} minutes left.' 
     message += '\n'
     
+    print(message)
+    
     if job_num == num_jobs:
         
-        message += 'Processing is complete!\n'
-    
-    print(message)
+        print('Processing is complete!\n')
         
 
 def process_jobs(jobs,  num_threads = 6):
@@ -155,22 +155,25 @@ class vectorize_wrapper:
     
   
 
-def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
-                       mp_batches = 1, linear_molecules = False, 
-                       prep_func = True):
+def run_queued_multiprocessing(func, index, params_dict = {}, 
+                               num_threads = 24, mp_batches = 1, 
+                               linear_molecules = False, prep_func = True, 
+                               **kwargs):
     """
     Parallelize jobs, returns a data frame or series.
 
     Parameters
     ----------
     func : function
-        Function to be parallelized. 
-    index : list, numpy array, pandas index, or pandas series
-        Used to keep track of returned observations
-    params_dict: dictionary
+        Function to be parallelized. Output must be a pandas data frame if 
+        prep_func =  False.
+    index : list, numpy array, pandas index, or pandas series. Used to keep 
+        track of returned observations. If prep_func = False, then only used for
+        number of observations
+    params_dict: dictionary, optional
         Contains a dictionary of the variables to input into func. The keys are
         the argument names and the values are pandas series of the corresponding
-        values.
+        values. Default is {}
     num_threads : int, optional
         The number of threads that will be used in parallel (one processor per thread). 
         The default is 24.
@@ -181,21 +184,25 @@ def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
     prep_func: boolean, optional
         Whether to vectorize function and make the first input the index. 
         Functions vectorized using np.vectorize are not pickleable so care must
-        be taken to prep the functions if done manually.
+        be taken to prep the functions if done manually. Furthermore, 
+        mp.imap_unordered does not preserve order. As a result, the function 
+        must be constructed so that inputs and outputs match.
+    kwargs:
+        Additional arguments of function that do not need to be vectorized.
 
     Returns
     -------
     Pandas data frame of sorted outputs
 
     """
-    
+        
     if prep_func:
         
         # Modify function
         new_func = vectorize_wrapper(func)
     
-    # Add index to the parameters
-    params_dict['index'] = index
+        # Add index to the parameters
+        params_dict['index'] = index
     
     # Get observations
     num_obs = len(index)
@@ -216,7 +223,7 @@ def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
     for i in range(1, len(parts)):
         
         job = {key:params_dict[key][parts[i - 1]:parts[i]] for key in params_dict}
-        job.update({'func':new_func})
+        job.update({'func':new_func, **kwargs})
         jobs.append(job)
         
     # If number of threads is one...   
@@ -235,8 +242,10 @@ def run_queued_multiprocessing(func, index, params_dict, num_threads = 24,
     # Concatinate results in list
     result_df = pd.concat(out, axis = 0)
     
-    # Set index as the index and drop as column
-    result_df = result_df.set_index('index', drop = True)
+    if prep_func:
+        
+        # Set index as the index and drop as column
+        result_df = result_df.set_index('index', drop = True)
 
     # Sort by the index
     result_df = result_df.sort_index()   
