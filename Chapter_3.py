@@ -238,6 +238,38 @@ def dropLabels(events, minPct = 0.05):
 
 def get_triple_barrier_label(x, upper = np.inf, lower = -np.inf, log_rtn = True, 
                              zero_label = False):
+    """
+    Lopez de Prado's triple barrier labeling method. The value x is a 
+    1-dimensional  array-like object. The value upper is the upper horizontal 
+    barrier and the value lower is the lower horizontal barrier. The verticle 
+    barrier is implied by the length of x. The intended use case is a rolling 
+    calculation on a column of equity returns for a particular firm.
+
+    Parameters
+    ----------
+    x : array-like object
+        Log return or price series. Log returns give slightly more information
+        because they also contain information about the t-1 price.
+    upper : float
+        The value upper is the location of upper horizontal barrier. It is
+        denoted by a decimal return. The default is np.inf.
+    lower : float
+        The value lower is the location of lower horizontal barrier. It is
+        denoted by a decimal return. The default is -np.inf.
+    log_rtn : boolean, optional
+        Whether a log return or a price time series. When log_rtn is set to 
+        true the day t return is utilized. The default is True.
+    zero_label : boolean, optional
+        If the cumulative return crosses the verticle barrior the label is 0 if
+        set to true. If set to false, it is the sign of the cumulative return. 
+        The default is False.
+
+    Returns
+    -------
+    int
+        Labels. If zero_label = True, the result is either -1, 0, or 1. If 
+        zero_label = False, the result is either -1 or 1.
+    """
     
     # Convert to numpy array
     x = np.asarray(x)
@@ -327,7 +359,6 @@ def get_triple_barrier_label(x, upper = np.inf, lower = -np.inf, log_rtn = True,
 # plt.subplots_adjust(hspace = 1)
 # 
 # plt.show()
-# 
 # =============================================================================
     
         
