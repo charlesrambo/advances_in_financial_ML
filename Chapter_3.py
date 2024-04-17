@@ -11,8 +11,8 @@ import pandas as pd
 import Chapter_20 as twenty
 
 # =============================================================================
-# There are likely to be bugs and typos in this code. I fould the functions in
-# this section to be more complicated than what I need, so I wrote one function
+# There are likely to be bugs and typos in this code. I found the functions in
+# this chapter to be more complicated than what I need, so I wrote one function
 # at the end which is the only code based on this chapter that I plan to use. 
 # As a result, the original functions were not run very many times (if at all).
 # =============================================================================
@@ -360,12 +360,4 @@ def get_triple_barrier_label(x, upper = np.inf, lower = -np.inf, log_rtn = True,
 # 
 # plt.show()
 # =============================================================================
-    
-        
-    
-    
-    
-    
-        
-        
     
