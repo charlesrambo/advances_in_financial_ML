@@ -286,38 +286,40 @@ def get_triple_barrier_label(x, upper = np.inf, lower = -np.inf, log_rtn = True,
         # ... the path is of this form
         path = x/x[0] - 1
     
-    # Get indices where the upper barrier is crossed
-    upper_args = np.where(path > upper)[0]
+    # Get places where upper and lower are crossed
+    upper_crossed = path > upper
+    lower_crossed = path < lower
     
-    # Get indices where the lower barrier is crossed
-    lower_args = np.where(path < lower)[0]
-    
-    # If both lists of arguments are empty... 
-    if len(upper_args) == 0 and len(lower_args) == 0:
+    # If both arrays have only false... 
+    if not np.any(upper_crossed) and not np.any(lower_crossed):
         
         # ... return either 0 or the sign of the final return
         return 0 if zero_label else np.sign(path[-1])
     
-    # If only upper_args is empty...
-    elif len(upper_args) == 0:
+    # If only upper_args has only false...
+    elif not np.any(upper_crossed):
         
         # ... then lower_args isn't empty so return -1
         return -1
     
-    # If only lower_args is empty...
-    elif len(lower_args) == 0:
+    # If only lower_args has only false...
+    elif not np.any(lower_crossed):
         
         # ... then upper_args isn't empy so return 1 
         return 1
     
-    # If neither list is empty... 
+    # If both have trues... 
     else:
         
-        # ... get first element of lists
-        upper_arg, lower_arg = upper_args[0], lower_args[0]
+        # Get the first index where the upper barrier is crossed
+        upper_arg = np.where(upper_crossed)[0][0]
+    
+        # Get the first index where the lower barrier is crossed
+        lower_arg = np.where(lower_crossed)[0][0]
         
         # Assign label based on what happened first
-        return 1 if upper_arg <= lower_arg else -1
+        return 1 if upper_arg < lower_arg  else -1
+ 
     
 # =============================================================================
 # import matplotlib.pyplot as plt
