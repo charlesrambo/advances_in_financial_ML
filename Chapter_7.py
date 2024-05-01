@@ -78,7 +78,7 @@ class PurgedKFold(_BaseKFold):
     """
     Extend KFold to work with labels that span intervals. The train is purged
     of observations overlapping test-label intervals. Test set is assumed 
-    contiguous (suffle = False), without training examples in between.
+    contiguous (shuffle = False), without training examples in between.
     """
     
     def __init__(self, n_splits = 3, t1 = None, percent_embargo = 0.0):
@@ -87,7 +87,7 @@ class PurgedKFold(_BaseKFold):
             
             raise ValueError('Label Through Dates must be a pandas series')
             
-        super(PurgedKFold, self).__init__(n_splits, suffle = False, 
+        super(PurgedKFold, self).__init__(n_splits, shuffle = False, 
                                           random_state = None)
         
         # t1 is a pandas series of start and end times
@@ -114,10 +114,10 @@ class PurgedKFold(_BaseKFold):
         embargo_step = int(nrows * self.percent_embargo)
         
         # Get the index splits
-        test_starts = [(array[0], array[-1] + 1) for array in np.array_split(indices, self.n_splits)]
+        test_splits = [(array[0], array[-1] + 1) for array in np.array_split(indices, self.n_splits)]
         
         # Loop over splits of index
-        for i, j in test_starts:
+        for i, j in test_splits:
             
             # Start time of test set
             t_0 = self.t1.index[i] 
@@ -162,31 +162,31 @@ def cvScore(clf, X, y, sample_weight, scoring = 'neg_log_loss', t1 = None,
     score = []
     
     # Loop over cross validation generator
-    for train, test in cv_gen.split(X = X):
+    for train_idx, test_idx in cv_gen.split(X = X):
         
         # Fit classifier using training results
-        clf_fit = clf.fit(X = X.iloc[train, :], y = y.iloc[train], 
-                      sample_weight = sample_weight.iloc[train].values)
+        clf_fit = clf.fit(X = X.iloc[train_idx, :], y = y.iloc[train_idx], 
+                      sample_weight = sample_weight.iloc[train_idx].values)
         
         # If scoring is negative log loss...
         if scoring == 'neg_log_loss':
             
             # ... calculate predicted probabilities
-            prob = clf_fit.predict_proba(X.iloc[test, :])
+            prob = clf_fit.predict_proba(X.iloc[test_idx, :])
             
             # ... then calcualte score
-            score_ = -log_loss(y.iloc[test], prob,
-                sample_weight = sample_weight.iloc[test].values, labels = clf.classes_)
+            score_ = -log_loss(y.iloc[test_idx], prob,
+                sample_weight = sample_weight.iloc[test_idx].values, labels = clf.classes_)
         
         # If scoring is accuracy...
         elif scoring == 'accuracy':
             
             # ... predict y-values
-            y_pred = clf_fit.predict(X.iloc[test, :])
+            y_pred = clf_fit.predict(X.iloc[test_idx, :])
             
             # ... calculate the accuracy using the predicted values
-            score_ = accuracy_score(y.iloc[test], y_pred , 
-                                    sample_weights = sample_weight.iloc[test].values)
+            score_ = accuracy_score(y.iloc[test_idx], y_pred , 
+                                    sample_weight = sample_weight.iloc[test_idx].values)
         
         # Append score to list of scores
         score.append(score_)
