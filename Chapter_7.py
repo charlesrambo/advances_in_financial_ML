@@ -126,13 +126,13 @@ class PurgedKFold(_BaseKFold):
             test_indices = indices[i:j]
             
             # Get the maximum t-value in the test set
-            max_t1_idx = self.t1.index.searchsorted(self.t1[test_indices].max())
+            max_t1_idx = self.t1.index.searchsorted(self.t1.iloc[test_indices].max())
             
             # Begin constructing the train indices...
             
             # ... it's the stuff before t_0
             train_indices = self.t1.index.searchsorted(
-                self.t1[self.t1 <= t_0 ].index)
+                self.t1.loc[self.t1 <= t_0].index)
             
             # ... and the stuff after max_t1 + embargo_step
             train_indices = np.concatenate([train_indices, 
