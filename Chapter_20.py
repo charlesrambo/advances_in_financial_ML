@@ -223,7 +223,15 @@ def run_queued_multiprocessing(func, index, params_dict = {},
     for i in range(1, len(parts)):
         
         job = {key:params_dict[key][parts[i - 1]:parts[i]] for key in params_dict}
-        job.update({'func':new_func, **kwargs})
+        
+        if prep_func:
+            
+            job.update({'func':new_func, **kwargs})
+            
+        else:
+            
+            job.update({'func':func, **kwargs})
+            
         jobs.append(job)
         
     # If number of threads is one...   
