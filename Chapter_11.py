@@ -10,83 +10,107 @@ import pandas as pd
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from scipy.special import comb
 
-# Define dimensions
-T, N = 36, 75
 
-# Define S
-S = 10
+# Generate data for test
 
 # Define alphas
-alphas = norm.rvs(loc = 5e-2, scale = 1e-5, size = N)
+alphas = norm.rvs(loc = 5e-2, scale = 1e-5, size = 75)
 
 # Randomly generate M
-M = norm.rvs(loc = alphas/12, scale = 0.50/np.sqrt(12), size = (T, N)) 
+M = norm.rvs(loc = alphas/12, scale = 0.50/np.sqrt(12), size = (36, alphas.shape[0])) 
 
-# Create list subarrays
+# Convert to pandas data Frame
+M = pd.DataFrame(M)
 
-# First generate the elements
-subarrays_list = np.arange(T)
-
-# Shuffle elements
-np.random.shuffle(subarrays_list)
-
-# Break up the results
-subarrays_list = [subarrays_list[int(i * T/S):int(i * T/S + T/S)] for i in range(S)]
-
-# Too many permutations to do all for large S; just choose a large number
-num_perms = 5000
-
-# Create performance statistic
+# Create performance statistic; bigger must be better
 def sharpe_ratio(x):
     
     return np.sqrt(12) * np.mean(x) /np.std(x)
 
-# Create pandas data frame to hold results
-results = pd.DataFrame(index = range(num_perms), 
-                       columns = ['OOS', 'IS', 'Logit'])
 
-# Loop over permutations
-for perm in range(num_perms):
+# Create Baily PBO function
+def run_baily_pbo_sims(M, fun, S = 16, shuffle = False, replace = False, simulations = 10000):
     
-    # Select S/2 of S; was combinations in book but doesn't make sense to me
-    J_idx = np.random.choice(range(S), size = int(S/2), replace = False)
+    # Get dimensions of M
+    T, N = M.shape
+    
+    # Get index
+    index = M.index
+    
+    # If shuffle is true
+    if shuffle:
         
-    # Get the remaining columns
-    J_c_idx = [i for i in range(T) if i not in J_idx]
+        # ... shuffle elements
+        np.random.shuffle(index)
     
-    # Get J and J_c using the index
-    J = M[J_idx, :]
-    J_c = M[J_c_idx, :]
+    # Break up the results
+    subarrays_list = [index[int(i * T/S):int(i * T/S + T/S)] for i in range(S - 1)]
+    subarrays_list += [index[int((S - 1) * T/S):]]
     
-    # Calculate performance metrics for each strategy IS
-    R = np.apply_along_axis(sharpe_ratio, axis = 0, arr = J)
+    # Calculate number of choices; if replace is true use stars-and-bars
+    choices = comb(S + int(S/2) - 1, int(S/2)) if replace else comb(S, int(S/2)) 
     
-    # Get n_star; the argument of max performance metric
-    n_star = np.argmax(R)
+    # Double because np.random.choice doesn't go through list
+    choices *= 2
     
-    # Save the best result
-    results.loc[perm, 'IS'] = R[n_star]
-
-    # Calculate performance metrics for each strategy OOS    
-    R_c = np.apply_along_axis(sharpe_ratio, axis = 0, arr = J_c)
-
-    # Save the best result
-    results.loc[perm, 'OOS'] = R_c[n_star]
+    # Too many combinations to do all for S large
+    simulations = int(min(simulations, choices))
+      
+    # Create pandas data frame to hold results
+    results = pd.DataFrame(index = range(simulations), 
+                           columns = ['OOS', 'IS', 'Logit'])
     
-    # Calculate omega_c
-    omega_c = (np.searchsorted(R_c, R_c[n_star]) - 0.5)/N
+    # Loop over combinations
+    for c in range(simulations):
+        
+        # Select S/2 element of the S bins
+        J_idx = np.random.choice(range(S), size = int(S/2), replace = replace)
+        
+        # Get the index values
+        J_idx = [i for s in J_idx for i in subarrays_list[s]]
+            
+        # Get the remaining columns
+        J_c_idx = [i for i in index if i not in J_idx]
+        
+        # Get J and J_c using the index
+        J = M.loc[J_idx, :].values
+        J_c = M.loc[J_c_idx, :].values
+        
+        # Calculate performance metrics for each strategy IS
+        R = np.apply_along_axis(fun, axis = 0, arr = J)
+        
+        # Get n_star; the argument of max performance metric
+        n_star = np.argmax(R)
+        
+        # Save the best result
+        results.loc[c, 'IS'] = R[n_star]
     
-    # Clip results
-    omega_c = np.clip(omega_c, a_min = 0.1/N, a_max = 1 - 0.1/N)
+        # Calculate performance metrics for each strategy OOS    
+        R_c = np.apply_along_axis(fun, axis = 0, arr = J_c)
     
-    # Save logit
-    results.loc[perm, 'Logit'] = np.log(omega_c/(1 - omega_c))
+        # Save the best result
+        results.loc[c, 'OOS'] = R_c[n_star]
+        
+        # Calculate omega_c
+        omega_c = (np.searchsorted(R_c, R_c[n_star]) - 0.5)/N
+        
+        # Clip results
+        omega_c = np.clip(omega_c, a_min = 0.1/N, a_max = 1 - 0.1/N)
+        
+        # Save logit
+        results.loc[c, 'Logit'] = np.log(omega_c/(1 - omega_c))
+        
+    # Make sure float value
+    results = results.astype(float)
     
-# Make sure float value
-results = results.astype(float)
-    
-
+    return results
+       
+# Get results
+results = run_baily_pbo_sims(M, fun = sharpe_ratio, S = 16)
+ 
+   
 # == Generate graphs ==
 
 # Create scatter plot
@@ -121,7 +145,7 @@ plt.show()
 # Histograms are way off; don't know if it's because of generated data
 
 # Plot histogram
-ax = results['Logit'].hist(bins = 100, density = True)
+ax = results['Logit'].hist(bins = 50, density = True)
 
 # Fit normal distribution
 loc, scale = norm.fit(results['Logit'].values)
