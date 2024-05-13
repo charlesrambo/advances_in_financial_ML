@@ -31,13 +31,14 @@ def sharpe_ratio(x):
 
 
 # Create Baily PBO function
-def run_baily_pbo_sims(M, fun, S = 16, shuffle = False, replace = False, simulations = 10000):
+def run_baily_pbo_sims(M, fun, S = 16, shuffle = False, replace = False, 
+                       simulations = 50000):
     
     # Get dimensions of M
     T, N = M.shape
     
     # Get index
-    index = M.index
+    index = np.asarray(M.index)
     
     # If shuffle is true
     if shuffle:
@@ -46,8 +47,7 @@ def run_baily_pbo_sims(M, fun, S = 16, shuffle = False, replace = False, simulat
         np.random.shuffle(index)
     
     # Break up the results
-    subarrays_list = [index[int(i * T/S):int(i * T/S + T/S)] for i in range(S - 1)]
-    subarrays_list += [index[int((S - 1) * T/S):]]
+    subarrays_list = np.array_split(index, S)
     
     # Calculate number of choices; if replace is true use stars-and-bars
     choices = comb(S + int(S/2) - 1, int(S/2)) if replace else comb(S, int(S/2)) 
@@ -93,7 +93,7 @@ def run_baily_pbo_sims(M, fun, S = 16, shuffle = False, replace = False, simulat
         # Save the best result
         results.loc[c, 'OOS'] = R_c[n_star]
         
-        # Calculate omega_c
+        # Calculate omega_c; draws go to value, but float accuracy may affect results (?)
         omega_c = (np.searchsorted(R_c, R_c[n_star]) - 0.5)/N
         
         # Clip results
@@ -160,7 +160,7 @@ ax.plot(x, norm(loc = loc, scale = scale).pdf(x), linestyle = 'dashed')
 ax.set_title('Histogram of Rank Logits')
 
 # Add annotation
-ax.annotate(f"Prob Overfit = {(results['Logit'] > 0).mean():.2f}",
+ax.annotate(f"Prob Overfit = {(results['Logit'] < 0).mean():.2f}",
             xy = (0.69, 0.93), xycoords='axes fraction',
             bbox=dict(boxstyle='square', fc = 'white'))
 
