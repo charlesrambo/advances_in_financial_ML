@@ -137,7 +137,7 @@ class CombPurgedKFoldCV(_BaseKFold):
             is_bad = is_bad|ends_in
             
         # What do we want to keep?
-        to_keep = holding_dates['t0'].isin(train_dates) & ~is_bad
+        to_keep = self.holding_dates['t0'].isin(train_dates) & ~is_bad
          
         # Train index values
         train_idx = list(self.holding_dates.loc[to_keep, :].index)
