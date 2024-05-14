@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from scipy.special import comb
 
+# Set random seed
+np.random.seed(0)
 
 # Generate data for test
 
