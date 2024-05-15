@@ -84,10 +84,10 @@ def run_trading_rule_simulations(forecast, half_life, sigma, profit_taking_rule,
 if __name__ == '__main__':
     
     # Create arrays of profit-taking and stop-loss rules
-    profit_taking_rules = stop_loss_rules = np.linspace(0, 10, 11)
+    profit_taking_rules = stop_loss_rules = np.linspace(0, 10, 10)
 
     # Create lists of forecasts and half-lives
-    forecasts, half_lifes = [10, 5, 0, -5, -10], [5, 10, 25, 50, 100]
+    forecasts, half_lifes = [5, 0, -5], [5, 25, 50, 100]
 
     # Create numpy array that has all possible products
     results = np.array(list(product(forecasts, half_lifes, profit_taking_rules, 
@@ -110,12 +110,12 @@ if __name__ == '__main__':
                                         num_threads = 6, 
                                         mp_batches = 20, 
                                         sigma = 1.0, 
-                                        n_iter = 5e4, 
+                                        n_iter = 1e5, 
                                         max_holding_period = 100,
                                         initial_price = 0)
     
     # Loop gover forecasts and half-life values
-    for forecast, half_life in zip(forecasts, half_lifes):
+    for forecast, half_life in product(forecasts, half_lifes):
         
         # Define which rows to keep
         to_keep = (results['forecast'] == forecast) & (
@@ -138,7 +138,7 @@ if __name__ == '__main__':
         fig, ax = plt.subplots(figsize = (15, 7))
 
         # Generate heatmap
-        sns.heatmap(heatmap_vals, cmap = 'Blues', ax = ax, annot = False)
+        sns.heatmap(heatmap_vals, cmap = 'Blues', ax = ax, annot = True)
 
         # Set title
         ax.set_title(f"Forecast = {forecast} | Half-Life = {half_life} | Sigma = 1")
