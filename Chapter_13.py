@@ -84,7 +84,7 @@ def run_trading_rule_simulations(forecast, half_life, sigma, profit_taking_rule,
 if __name__ == '__main__':
     
     # Create arrays of profit-taking and stop-loss rules
-    profit_taking_rules = stop_loss_rules = np.linspace(0, 10, 10)
+    profit_taking_rules = stop_loss_rules = np.linspace(0, 10, 11)
 
     # Create lists of forecasts and half-lives
     forecasts, half_lifes = [5, 0, -5], [5, 25, 50, 100]
