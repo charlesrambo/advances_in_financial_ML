@@ -362,7 +362,7 @@ class CLA:
                 
                 i += 1
                 
-            if i == len(self.w) - 1:
+            if i >= len(self.w) - 1:
                 
                 break
             
@@ -372,7 +372,7 @@ class CLA:
             
             repeat = False
             
-            mu_next = [(w.T @ self.mean)[0,0] for j in range(i + 1, len(self.w))]
+            mu_next = [(self.w[j].T @ self.mean)[0,0] for j in range(i + 1, len(self.w))]
             
             if mu < np.max(mu_next):
                     
