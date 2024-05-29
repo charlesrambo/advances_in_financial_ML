@@ -28,7 +28,7 @@ class CLA:
         self.w = [] 
         
         # Lambdas
-        self.l = []
+        self.lam = []
         
         # Gammas
         self.g = [] 
@@ -66,7 +66,8 @@ class CLA:
         w[b[i][0]] += 1 - sum(w)
         
         return [b[i][0]], w
-    
+
+#---------------------------------------------------------------        
     def getB(self,f):
         
         return self.diffLists(range(self.mean.shape[0]), f)
@@ -150,15 +151,15 @@ class CLA:
          
         onesB = np.ones(wB.shape)
         
-        l1 = onesB.T @ wB
+        lam1 = onesB.T @ wB
         
-        l2 = covarF_inv @ covarFB
+        lam2 = covarF_inv @ covarFB
         
-        l3 = l2 @ wB
+        lam3 = lam2 @ wB
         
-        l2 = onesF.T @ l3
+        lam2 = onesF.T @ lam3
         
-        return float(((1 -l1 + l2) * c4[i] - c1 * (bi + l3[i]))/c), bi
+        return float(((1 - lam1 + lam2) * c4[i] - c1 * (bi + lam3[i]))/c), bi
     
 #---------------------------------------------------------------
     def computeW(self, covarF_inv, covarFB, meanF, wB):
@@ -172,7 +173,7 @@ class CLA:
          
          if wB is None:
              
-             g, w1 = float(-self.l[-1] * g1/g2 + 1/g2), 0
+             g, w1 = float(-self.lam[-1] * g1/g2 + 1/g2), 0
              
          else:
              
@@ -186,31 +187,28 @@ class CLA:
              
              g4 = onesF.T @ w1
              
-             g = float(-self.l[-1] * g1/g2 + (1 - g3 + g4)/g2)
+             g = float(-self.lam[-1] * g1/g2 + (1 - g3 + g4)/g2)
              
          #2) compute weights
          w2 = covarF_inv @ onesF
              
          w3 = covarF_inv @ meanF
              
-         return -w1 + g * w2 + self.l[-1] * w3, g
+         return -w1 + g * w2 + self.lam[-1] * w3, g
          
 #---------------------------------------------------------------
     def getMinVar(self):
         
         # Get the minimum variance solution
-        var = []
-    
-        for w in self.w:
+        var = [w.T @ self.covar @ w for w in self.w]
+        
+        # Get the index corresponding to the lowest variance
+        idx_min = np.argmin(var)
             
-            a = (w.T @ self.covar) @ w
-    
-            var.append(a)
-            
-        return np.sqrt(np.min(var)), self.w[np.argmin(var)]  
+        return np.sqrt(var[idx_min]), self.w[idx_min]  
     
 #---------------------------------------------------------------    
-    def goldenSection(self,obj,a,b,**kwargs):
+    def goldenSection(self, obj, a, b, **kwargs):
          # Golden section method. Maximum if kargs['minimum'] == False is passed
          
          tol, sign, args = 1.0e-9, 1, None
@@ -223,7 +221,7 @@ class CLA:
              
              args = kwargs['args']
              
-         numIter = int(np.ceil(-2.078087 * np.log(tol/np.abs(b-a))))
+         numIter = int(-2.078087 * np.log(tol/np.abs(b-a)) + 1)
          
          r = 0.618033989
          c = 1.0 - r
@@ -279,17 +277,20 @@ class CLA:
              
              a, b = self.goldenSection(self.evalSR, 0, 1, **kwargs)
              
-             w_sr.append(a * w0 + (1-a) * w1)  
+             w_sr.append(a * w0 + (1 - a) * w1)  
              
              sr.append(b)
              
-         return np.max(sr), w_sr[np.argmax(sr)]
+         # Get the index corresponding to the maximum sharpe ratio
+         idx_max = np.argmax(sr)
+         
+         return sr[idx_max], w_sr[idx_max]
 
 #---------------------------------------------------------------
-    def evalSR(self, a, w0, w1):
+    def evalSR(self, alpha, w0, w1):
         
         # Evaluate SR of the portfolio within the convex combination
-        w = a * w0 + (1 - a) * w1
+        w = alpha * w0 + (1 - alpha) * w1
      
         b = (w.T @ self.mean)[0,0]
      
@@ -313,17 +314,19 @@ class CLA:
             # Include the 1 in the last iteration
             if i == len(self.w) - 2:
                 
-                a = np.linspace(0, 1, int(points/len(self.w))) 
-                
-            for alpha in a:
-                
-                w = alpha * w1 + (1 - alpha) * w0
-                
-                weights.append(np.copy(w))
-                
-                mu.append((w.T @ self.mean)[0,0])
-                
-                sigma.append(np.sqrt(((w.T @ self.covar) @ w)[0,0]))
+                a = np.linspace(0, 1, int(points/len(self.w)))
+             
+            # Calculate weights
+            w_vals = [alpha * w1 + (1 - alpha) * w0 for alpha in a]
+            
+            # Extend list of weights
+            weights.extend(w_vals)
+            
+            # Extend list of means
+            mu.extend([(w.T @ self.mean)[0,0] for w in w_vals]) 
+            
+            # Extend list of stds
+            sigma.extend([np.sqrt((w.T @ self.covar @ w)[0,0]) for w in w_vals])
             
         return mu, sigma, weights
     
@@ -338,7 +341,7 @@ class CLA:
             if np.any(w - self.lB < -tol) or np.any(w - self.uB > tol):
                 
                 del self.w[i]
-                del self.l[i]
+                del self.lam[i]
                 del self.g[i]
                 del self.f[i]
             
@@ -365,23 +368,20 @@ class CLA:
             
             repeat = False
             
-            for j in range(i + 1, len(self.w)):
-                 
-                w = self.w[j]
-                
-                mu_ = (w.T @ self.mean)[0,0]
-                
-                if mu < mu_:
+            mu_next = [(w.T @ self.mean)[0,0] for j in range(i + 1, len(self.w))]
+            
+            if mu < np.max(mu_next):
                     
-                    del self.w[i]
-                    del self.l[i]
-                    del self.g[i]
-                    del self.f[i]
-                    repeat = True
-                    
-                    break
+                del self.w[i]
+                del self.lam[i]
+                del self.g[i]
+                del self.f[i]
                 
-
+                repeat = True
+                
+                break                
+            
+        
 #---------------------------------------------------------------
     def solve(self):
         
@@ -390,14 +390,14 @@ class CLA:
          
          # Store solution
          self.w.append(np.copy(w))
-         self.l.append(np.nan)
+         self.lam.append(np.nan)
          self.g.append(np.nan)
          self.f.append(f[:])
          
          while True:
              
              #1) case a): Bound one free weight
-             l_in = np.nan
+             lam_in = np.nan
              
              if len(f) > 1:
                  
@@ -407,15 +407,15 @@ class CLA:
                  
                  for j, i in enumerate(f):
                      
-                    l, bi = self.computeLambda(covarF_inv, covarFB, meanF, wB, j,
+                    lam, bi = self.computeLambda(covarF_inv, covarFB, meanF, wB, j,
                                                 [self.lB[i], self.uB[i]])
                      
-                    if l > l_in:
+                    if lam > lam_in:
                          
-                        l_in, i_in, bi_in = l, i, bi
+                        lam_in, i_in, bi_in = lam, i, bi
                     
              #2) case b): Free one bounded weight
-             l_out = np.nan
+             lam_out = np.nan
              
              if len(f) < self.mean.shape[0]:
                  
@@ -427,18 +427,18 @@ class CLA:
                      
                      covarF_inv = np.linalg.inv(covarF)
                      
-                     l, bi = self.computeLambda(covarF_inv, covarFB, meanF, wB,
+                     lam, bi = self.computeLambda(covarF_inv, covarFB, meanF, wB,
                                                 meanF.shape[0] - 1, self.w[-1][i])
                      
-                     if (self.l[-1] is np.nan or l < self.l[-1]) and (l_out is np.nan or l > l_out):
+                     if (self.lam[-1] is np.nan or lam < self.lam[-1]) and (lam_out is np.nan or lam > lam_out):
                          
-                         l_out, i_out = l, i
+                         lam_out, i_out = lam, i
               
              
-             if (l_in is np.nan or l_in < 0) and (l_out is np.nan or l_out < 0):
+             if (lam_in is np.nan or lam_in < 0) and (lam_out is np.nan or lam_out < 0):
                  
                  # 3) Compute minimum variance solution
-                 self.l.append(0)
+                 self.lam.append(0)
                  
                  covarF, covarFB, meanF, wB = self.getMatrices(f)
                  
@@ -449,9 +449,9 @@ class CLA:
              else:
                 
                 # 4) Decide lambda
-                if l_in > l_out:
+                if lam_in > lam_out:
                     
-                    self.l.append(l_in)
+                    self.lam.append(lam_in)
                     f.remove(i_in)
                     
                     # Set value at the correct boundary
@@ -459,7 +459,7 @@ class CLA:
                     
                 else:
                     
-                    self.l.append(l_out)
+                    self.lam.append(lam_out)
                     f.append(i_out)
                     
                 covarF, covarFB, meanF, wB = self.getMatrices(f)
@@ -478,13 +478,13 @@ class CLA:
              self.g.append(g)
              self.f.append(f[:])
              
-             if self.l[-1] == 0:
+             if self.lam[-1] == 0:
                  
                  break
            
          # Remove initialization from lists        
          self.w = self.w[1:]
-         self.l = self.l[1:]
+         self.lam = self.lam[1:]
          self.g = self.g[1:]
             
          # 6) Purge turning points
