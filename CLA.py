@@ -113,8 +113,12 @@ class CLA:
         if len(listX) == 0 or len(listY) == 0: 
             
             return None
-            
-        return matrix[listX, listY]
+        
+        # Subset to just rows we want
+        matrix_ = matrix[listX, :]
+         
+        # Subset to just columns we want
+        return matrix_[:, listY]
     
 #---------------------------------------------------------------
     def computeLambda(self, covarF_inv, covarFB, meanF, wB, i, bi):
