@@ -314,7 +314,7 @@ class CLA:
         return b/c
     
 #---------------------------------------------------------------    
-    def efFrontier(self,points):
+    def efFrontier(self, points):
         
         # Get the efficient frontier
         mu, sigma, weights = [], [], []
@@ -322,51 +322,42 @@ class CLA:
         # Remove the 1, to avoid duplications
         a = np.linspace(0, 1, int(points/len(self.w)))[:-1] 
         
-        b = range(len(self.w) - 1)
-        
-        for i in b:
+        for i in range(len(self.w) - 1):
             
             w0, w1 = self.w[i], self.w[i + 1]
             
             # Include the 1 in the last iteration
-            if i == b[-1]:
+            if i == len(self.w) - 2:
                 
                 a = np.linspace(0, 1, int(points/len(self.w))) 
                 
-        for j in a:
-            
-            w = w1 * j + (1 - j) * w0
-            
-            weights.append(np.copy(w))
-            
-            mu.append((w.T @ self.mean)[0,0])
-            
-            sigma.append(np.sqrt(((w.T @ self.covar) @ w)[0,0]))
+            for alpha in a:
+                
+                w = alpha * w1 + (1 - alpha) * w0
+                
+                weights.append(np.copy(w))
+                
+                mu.append((w.T @ self.mean)[0,0])
+                
+                sigma.append(np.sqrt(((w.T @ self.covar) @ w)[0,0]))
             
         return mu, sigma, weights
     
 #---------------------------------------------------------------
     def purgeNumErr(self,tol):
         
-        # Purge violations of inequality constraints (associated with ill-conditioned covar matrix)
-        i = 0
-        
-        while True:
-            
-            if i==len(self.w): break
-        
+        # Purge violations of inequality constraints (associated with ill-conditioned covar matrix)       
+        for i in range(len(self.w)):
+                  
             w = self.w[i]
             
-            for j in range(w.shape[0]):
+            if np.any(w - self.lB < -tol) or np.any(w - self.uB > tol):
                 
-                if w[j]- self.lB[j] < -tol or w[j] - self.uB[j] > tol:
-                    
-                    del self.w[i]
-                    del self.l[i]
-                    del self.g[i]
-                    del self.f[i]
-                    break
-            i += 1
+                del self.w[i]
+                del self.l[i]
+                del self.g[i]
+                del self.f[i]
+            
             
 #---------------------------------------------------------------
     def purgeExcess(self):
@@ -380,21 +371,18 @@ class CLA:
                 
                 i += 1
                 
-            if i == len(self.w)-1:
+            if i == len(self.w) - 1:
                 
                 break
             
             w = self.w[i]
+            
             mu = (w.T @ self.mean)[0,0]
             
-            j, repeat = i+1, False
+            repeat = False
             
-            while True:
-                
-                if j == len(self.w):
-                    
-                    break
-                
+            for j in range(i + 1, len(self.w)):
+                 
                 w = self.w[j]
                 
                 mu_ = (w.T @ self.mean)[0,0]
@@ -409,11 +397,6 @@ class CLA:
                     
                     break
                 
-                else:
-                    
-                    j += 1
-
-
 
 #---------------------------------------------------------------
     def solve(self):
