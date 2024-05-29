@@ -112,24 +112,8 @@ class CLA:
         if len(listX) == 0 or len(listY) == 0: 
             
             return None
-        
-        matrix_ = matrix[:, listY[0]:listY[0] + 1]
-        
-        for i in listY[1:]:
             
-            a = matrix[:, i:i + 1]
-            
-            matrix_ = np.append(matrix_, a, 1)
-            
-        matrix__ = matrix_[listX[0]:listX[0] + 1,:]
-        
-        for i in listX[1:]:
-            
-            a = matrix_[i:i + 1,:]
-            
-            matrix__ = np.append(matrix__, a, 0)
-            
-        return matrix__
+        return matrix[listX, listY]
     
 #---------------------------------------------------------------
     def computeLambda(self, covarF_inv, covarFB, meanF, wB, i, bi):
