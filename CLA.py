@@ -337,10 +337,13 @@ class CLA:
 #---------------------------------------------------------------
     def purgeNumErr(self,tol):
         
+        # Track number removed
+        removed = 0
+        
         # Purge violations of inequality constraints (associated with ill-conditioned covar matrix)       
         for i in range(len(self.w)):
                   
-            w = self.w[i]
+            w = self.w[i - removed]
             
             if np.any(w - self.lB < -tol) or np.any(w - self.uB > tol):
                 
@@ -348,6 +351,8 @@ class CLA:
                 del self.lam[i]
                 del self.g[i]
                 del self.f[i]
+                
+                removed += 1
             
             
 #---------------------------------------------------------------
@@ -362,7 +367,7 @@ class CLA:
                 
                 i += 1
                 
-            if i >= len(self.w) - 1:
+            if i == len(self.w) - 1:
                 
                 break
             
