@@ -271,20 +271,33 @@ class CLA:
          #1) Compute the local max SR portfolio between any two neighbor turning points
          w_sr, sr = [], []
          
-         for i in range(len(self.w) - 1):
+         if len(self.w) > 1:
              
-             w0 = np.copy(self.w[i])
+             for i in range(len(self.w) - 1):
+                 
+                 w0 = np.copy(self.w[i])
+                 
+                 w1 = np.copy(self.w[i + 1])
+                 
+                 kwargs = {'minimum':False,'args':(w0, w1)}
+                 
+                 a, b = self.goldenSection(self.evalSR, 0, 1, **kwargs)
+                 
+                 w_sr.append(a * w0 + (1 - a) * w1)  
+                 
+                 sr.append(b)
+                 
+         else:
              
-             w1 = np.copy(self.w[i + 1])
+             w = self.w[0]
              
-             kwargs = {'minimum':False,'args':(w0, w1)}
+             w_sr.append(w)
              
-             a, b = self.goldenSection(self.evalSR, 0, 1, **kwargs)
+             b = (w.T @ self.mean)[0,0]
+             c = np.sqrt((w.T @ self.covar @ w)[0,0])
              
-             w_sr.append(a * w0 + (1 - a) * w1)  
-             
-             sr.append(b)
-             
+             sr.append(b/c)
+                        
          # Get the index corresponding to the maximum sharpe ratio
          idx_max = np.argmax(sr)
          
