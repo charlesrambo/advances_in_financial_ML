@@ -356,39 +356,28 @@ class CLA:
             
             
 #---------------------------------------------------------------
-    def purgeExcess(self):
-        
+    def purgeExcess(self): 
         # Remove violations of the convex hull
-        i, repeat = 0, False
         
-        while True:
+        # Track number removed
+        removed = 0
+        
+        for i in range(len(self.w) - 1):
             
-            if repeat == False:
-                
-                i += 1
-                
-            if i == len(self.w) - 1:
-                
-                break
-            
-            w = self.w[i]
+            w = self.w[i - removed]
             
             mu = (w.T @ self.mean)[0,0]
             
-            repeat = False
-            
-            mu_next = [(self.w[j].T @ self.mean)[0,0] for j in range(i + 1, len(self.w))]
+            mu_next = [(self.w[j].T @ self.mean)[0,0] for j in range(i - removed + 1, len(self.w))]
             
             if mu < np.max(mu_next):
                     
-                del self.w[i]
-                del self.lam[i]
-                del self.g[i]
-                del self.f[i]
+                del self.w[i - removed]
+                del self.lam[i - removed]
+                del self.g[i - removed]
+                del self.f[i - removed]
                 
-                repeat = True
-                
-                break                
+                removed += 1
             
         
 #---------------------------------------------------------------
