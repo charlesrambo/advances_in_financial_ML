@@ -347,10 +347,10 @@ class CLA:
             
             if np.any(w - self.lB < -tol) or np.any(w - self.uB > tol):
                 
-                del self.w[i]
-                del self.lam[i]
-                del self.g[i]
-                del self.f[i]
+                del self.w[i - removed]
+                del self.lam[i - removed]
+                del self.g[i - removed]
+                del self.f[i - removed]
                 
                 removed += 1
             
