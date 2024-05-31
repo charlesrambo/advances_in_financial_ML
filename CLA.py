@@ -57,7 +57,7 @@ class CLA:
         #3) First free weight
         i, w = b.shape[0], np.copy(self.lB)
         
-        while sum(w) < 1:
+        while sum(w) < 1.0:
             
             i -= 1
             
@@ -91,7 +91,7 @@ class CLA:
         return list(set(list1) - set(list2))
 
 #---------------------------------------------------------------
-    def get_matrices(self,f):
+    def get_matrices(self, f):
         
         # Slice covarF, covarFB, covarB, meanF, meanB, wF, wB
         covarF = self.reduce_matrix(self.covar, f, f)
@@ -197,8 +197,14 @@ class CLA:
          w2 = covarF_inv @ onesF
              
          w3 = covarF_inv @ meanF
-             
-         return -w1 + g * w2 + self.lam[-1] * w3, g
+         
+         # Get free weight
+         wF = -w1 + g * w2 + self.lam[-1] * w3
+         
+         # Make sure sum is 1
+         #wF *= (1 - np.sum(wB))/np.sum(wF)
+         
+         return wF, g
          
 #---------------------------------------------------------------
     def get_min_var(self):
@@ -347,7 +353,7 @@ class CLA:
         return mu, sigma, weights
     
 #---------------------------------------------------------------
-    def purge_numerical_error(self,tol):
+    def purge_numerical_error(self, tol):
         
         # Track number removed
         removed = 0
@@ -417,8 +423,8 @@ class CLA:
                  
                  for j, i in enumerate(f):
                      
-                    lam, bi = self.compute_lambda(covarF_inv, covarFB, meanF, wB, j,
-                                                [self.lB[i], self.uB[i]])
+                    lam, bi = self.compute_lambda(covarF_inv, covarFB, meanF, 
+                                                  wB, j, [self.lB[i], self.uB[i]])
                      
                     if lam > lam_in:
                          
@@ -462,6 +468,7 @@ class CLA:
                 if lam_in > lam_out:
                     
                     self.lam.append(lam_in)
+                    
                     f.remove(i_in)
                     
                     # Set value at the correct boundary
@@ -470,6 +477,7 @@ class CLA:
                 else:
                     
                     self.lam.append(lam_out)
+                    
                     f.append(i_out)
                     
                 covarF, covarFB, meanF, wB = self.get_matrices(f)
@@ -482,7 +490,7 @@ class CLA:
              for i in range(len(f)):
                  
                  w[f[i]] = wF[i]
-                 
+             
              # Store solution
              self.w.append(np.copy(w))
              self.g.append(g)
@@ -493,7 +501,7 @@ class CLA:
                  break
             
          # 6) Purge turning points
-         self.purge_numerical_error(10e-10)
+         self.purge_numerical_error(1e-9)
          self.purge_excess()
                  
  
