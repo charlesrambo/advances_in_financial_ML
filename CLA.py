@@ -37,7 +37,7 @@ class CLA:
         self.f = []
 
 #---------------------------------------------------------------        
-    def initAlgo(self):
+    def initialize_algo(self):
         
         # Initialize the algorithm
         
@@ -68,12 +68,12 @@ class CLA:
         return [b[i][0]], w
 
 #---------------------------------------------------------------        
-    def getB(self,f):
+    def get_b(self,f):
         
-        return self.diffLists(range(self.mean.shape[0]), f)
+        return self.diff_lists(range(self.mean.shape[0]), f)
     
 #---------------------------------------------------------------    
-    def computeBi(self, c, bi):
+    def compute_bi(self, c, bi):
         
         if c > 0:
             
@@ -86,28 +86,28 @@ class CLA:
         return bi
     
 #---------------------------------------------------------------
-    def diffLists(self,list1,list2):
+    def diff_lists(self,list1,list2):
         
         return list(set(list1) - set(list2))
 
 #---------------------------------------------------------------
-    def getMatrices(self,f):
+    def get_matrices(self,f):
         
         # Slice covarF, covarFB, covarB, meanF, meanB, wF, wB
-        covarF = self.reduceMatrix(self.covar, f, f)
+        covarF = self.reduce_matrix(self.covar, f, f)
         
-        meanF = self.reduceMatrix(self.mean, f, [0])
+        meanF = self.reduce_matrix(self.mean, f, [0])
         
-        b = self.getB(f)
+        b = self.get_b(f)
         
-        covarFB = self.reduceMatrix(self.covar, f, b)
+        covarFB = self.reduce_matrix(self.covar, f, b)
         
-        wB = self.reduceMatrix(self.w[-1], b, [0])
+        wB = self.reduce_matrix(self.w[-1], b, [0])
         
         return covarF, covarFB, meanF, wB
 
 #---------------------------------------------------------------
-    def reduceMatrix(self, matrix, listX, listY):
+    def reduce_matrix(self, matrix, listX, listY):
         
         # Reduce a matrix to the provided list of rows and columns
         if len(listX) == 0 or len(listY) == 0: 
@@ -121,7 +121,7 @@ class CLA:
         return matrix_[:, listY]
     
 #---------------------------------------------------------------
-    def computeLambda(self, covarF_inv, covarFB, meanF, wB, i, bi):
+    def compute_lambda(self, covarF_inv, covarFB, meanF, wB, i, bi):
         
      #1) C
      onesF = np.ones(meanF.shape)
@@ -143,7 +143,7 @@ class CLA:
      #2) bi
      if type(bi) == list:
          
-         bi = self.computeBi(c,bi)
+         bi = self.compute_bi(c,bi)
      
      #3) Lambda
      if wB is None:
@@ -166,7 +166,7 @@ class CLA:
         return float(((1 - lam1 + lam2) * c4[i] - c1 * (bi + lam3[i]))/c), bi
     
 #---------------------------------------------------------------
-    def computeW(self, covarF_inv, covarFB, meanF, wB):
+    def compute_w(self, covarF_inv, covarFB, meanF, wB):
         
          #1) Compute gamma
          onesF = np.ones(meanF.shape)
@@ -201,7 +201,7 @@ class CLA:
          return -w1 + g * w2 + self.lam[-1] * w3, g
          
 #---------------------------------------------------------------
-    def getMinVar(self):
+    def get_min_var(self):
         
         # Get the minimum variance solution
         var = [w.T @ self.covar @ w for w in self.w]
@@ -212,7 +212,7 @@ class CLA:
         return np.sqrt(var[idx_min]), self.w[idx_min]  
     
 #---------------------------------------------------------------    
-    def goldenSection(self, obj, a, b, **kwargs):
+    def golden_section(self, obj, a, b, **kwargs):
          # Golden section method. Maximum if kargs['minimum'] == False is passed
          
          tol, sign, args = 1.0e-9, 1, None
@@ -265,7 +265,7 @@ class CLA:
              return x2, sign * f2
      
 #---------------------------------------------------------------           
-    def getMaxSR(self):
+    def get_max_SR(self):
          # Get the max Sharpe ratio portfolio
          
          #1) Compute the local max SR portfolio between any two neighbor turning points
@@ -281,9 +281,9 @@ class CLA:
                  
                  kwargs = {'minimum':False,'args':(w0, w1)}
                  
-                 a, b = self.goldenSection(self.evalSR, 0, 1, **kwargs)
+                 alpha, b = self.golden_section(self.eval_SR, 0, 1, **kwargs)
                  
-                 w_sr.append(a * w0 + (1 - a) * w1)  
+                 w_sr.append(alpha * w0 + (1 - alpha) * w1)  
                  
                  sr.append(b)
                  
@@ -293,10 +293,9 @@ class CLA:
              
              w_sr.append(w)
              
-             b = (w.T @ self.mean)[0,0]
-             c = np.sqrt((w.T @ self.covar @ w)[0,0])
+             b = (w.T @ self.mean)[0,0]/np.sqrt((w.T @ self.covar @ w)[0,0])
              
-             sr.append(b/c)
+             sr.append(b)
                         
          # Get the index corresponding to the maximum sharpe ratio
          idx_max = np.argmax(sr)
@@ -304,7 +303,7 @@ class CLA:
          return sr[idx_max], w_sr[idx_max]
 
 #---------------------------------------------------------------
-    def evalSR(self, alpha, w0, w1):
+    def eval_SR(self, alpha, w0, w1):
         
         # Evaluate SR of the portfolio within the convex combination
         w = alpha * w0 + (1 - alpha) * w1
@@ -316,7 +315,7 @@ class CLA:
         return b/c
     
 #---------------------------------------------------------------    
-    def efFrontier(self, points):
+    def efficient_frontier(self, points):
         
         # Get the efficient frontier
         mu, sigma, weights = [], [], []
@@ -348,7 +347,7 @@ class CLA:
         return mu, sigma, weights
     
 #---------------------------------------------------------------
-    def purgeNumErr(self,tol):
+    def purge_numerical_error(self,tol):
         
         # Track number removed
         removed = 0
@@ -369,7 +368,7 @@ class CLA:
             
             
 #---------------------------------------------------------------
-    def purgeExcess(self): 
+    def purge_excess(self): 
         # Remove violations of the convex hull
         
         # Track number removed
@@ -397,7 +396,7 @@ class CLA:
     def solve(self):
         
          # Compute the turning points,free sets and weights
-         f, w = self.initAlgo()
+         f, w = self.initialize_algo()
          
          # Store solution
          self.w.append(np.copy(w))
@@ -412,13 +411,13 @@ class CLA:
              
              if len(f) > 1:
                  
-                 covarF, covarFB, meanF, wB = self.getMatrices(f)
+                 covarF, covarFB, meanF, wB = self.get_matrices(f)
                  
                  covarF_inv = np.linalg.inv(covarF)
                  
                  for j, i in enumerate(f):
                      
-                    lam, bi = self.computeLambda(covarF_inv, covarFB, meanF, wB, j,
+                    lam, bi = self.compute_lambda(covarF_inv, covarFB, meanF, wB, j,
                                                 [self.lB[i], self.uB[i]])
                      
                     if lam > lam_in:
@@ -430,15 +429,15 @@ class CLA:
              
              if len(f) < self.mean.shape[0]:
                  
-                 b = self.getB(f)
+                 b = self.get_b(f)
                  
                  for i in b:
                      
-                     covarF, covarFB, meanF, wB = self.getMatrices(f + [i])
+                     covarF, covarFB, meanF, wB = self.get_matrices(f + [i])
                      
                      covarF_inv = np.linalg.inv(covarF)
                      
-                     lam, bi = self.computeLambda(covarF_inv, covarFB, meanF, wB,
+                     lam, bi = self.compute_lambda(covarF_inv, covarFB, meanF, wB,
                                                 meanF.shape[0] - 1, self.w[-1][i])
                      
                      if (self.lam[-1] is np.nan or lam < self.lam[-1]) and (lam_out is np.nan or lam > lam_out):
@@ -451,7 +450,7 @@ class CLA:
                  # 3) Compute minimum variance solution
                  self.lam.append(0)
                  
-                 covarF, covarFB, meanF, wB = self.getMatrices(f)
+                 covarF, covarFB, meanF, wB = self.get_matrices(f)
                  
                  covarF_inv = np.linalg.inv(covarF)
                  
@@ -473,12 +472,12 @@ class CLA:
                     self.lam.append(lam_out)
                     f.append(i_out)
                     
-                covarF, covarFB, meanF, wB = self.getMatrices(f)
+                covarF, covarFB, meanF, wB = self.get_matrices(f)
                 
                 covarF_inv = np.linalg.inv(covarF)
                 
              # 5) Compute solution vector
-             wF, g = self.computeW(covarF_inv, covarFB, meanF, wB)
+             wF, g = self.compute_w(covarF_inv, covarFB, meanF, wB)
                     
              for i in range(len(f)):
                  
@@ -492,14 +491,9 @@ class CLA:
              if self.lam[-1] == 0:
                  
                  break
-           
-         # Remove initialization from lists        
-         self.w = self.w[1:]
-         self.lam = self.lam[1:]
-         self.g = self.g[1:]
             
          # 6) Purge turning points
-         self.purgeNumErr(10e-10)
-         self.purgeExcess()
+         self.purge_numerical_error(10e-10)
+         self.purge_excess()
                  
  
