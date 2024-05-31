@@ -3,14 +3,14 @@
 Taken directly from zip file found at:
 https://www.davidhbailey.com/dhbpapers/
 """
-import matplotlib.pyplot as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import CLA
 
 #---------------------------------------------------------------
 def plot2D(x, y, xLabel ='', yLabel = '', title ='', pathChart = None):
     
-    fig = mpl.figure()
+    fig = plt.figure()
     
     # One row, one column, first plot
     ax = fig.add_subplot(1,1,1) 
@@ -21,20 +21,20 @@ def plot2D(x, y, xLabel ='', yLabel = '', title ='', pathChart = None):
     
     ax.set_ylabel(yLabel, rotation = 90)
     
-    mpl.xticks(rotation = 'vertical')
+    plt.xticks(rotation = 'vertical')
     
-    mpl.title(title)
+    plt.title(title)
     
     if pathChart == None:
         
-        mpl.show()
+        plt.show()
         
     else:
         
-        mpl.savefig(pathChart)
+        plt.savefig(pathChart)
      
     # Reset pylab
-    mpl.clf() 
+    plt.clf() 
 
 #---------------------------------------------------------------
 def main(path):
@@ -62,20 +62,20 @@ def main(path):
     print(cla.w)
     
     #4) Plot frontier
-    mu, sigma, weights = cla.efFrontier(100)
+    mu, sigma, weights = cla.efficient_frontier(100)
     
     plot2D(sigma,mu,'Risk','Expected Excess Return',
            'CLA-derived Efficient Frontier')
     
     #5) Get Maximum Sharpe ratio portfolio
-    sr, w_sr = cla.getMaxSR()
+    sr, w_sr = cla.get_max_SR()
     
     print(np.sqrt(((w_sr.T@ cla.covar) @ w_sr)[0,0]), sr)
     
     print(w_sr)
     
     #6) Get Minimum Variance portfolio
-    mv, w_mv = cla.getMinVar()
+    mv, w_mv = cla.get_min_var()
     
     print(mv)
     
@@ -94,7 +94,7 @@ def main(path):
             w_.append(w)
             x.append(np.sqrt(((w.T @ cla.covar)@ w)[0,0]))
             y.append((w.T @ cla.mean)[0,0])
-            z.append(cla.evalSR(a,w0,w1))
+            z.append(cla.eval_SR(a,w0,w1))
             
     print(np.max(y),w_[np.argmax(z)])
           
