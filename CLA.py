@@ -19,10 +19,10 @@ class CLA:
             
             mean[-1,0] += 1e-5
                      
-        self.mean = mean
-        self.covar = covar
-        self.lB = lB
-        self.uB = uB
+        self.mean = np.asarray(mean)
+        self.covar = np.asarray(covar)
+        self.lB = np.asarray(lB)
+        self.uB = np.asarray(uB)
         
         # Solution
         self.w = [] 
