@@ -4,7 +4,7 @@ Created on Fri May 24 08:37:33 2024
 
 @authors: David Bailey and Marcos López de Prado
 https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2197616
-@copier: charlesr
+@copier: Charles Rambo
 """
 
 import numpy as np 
@@ -35,6 +35,7 @@ class CLA:
         
         # Free weights
         self.f = []
+
 
 #---------------------------------------------------------------        
     def initialize_algo(self):
@@ -67,10 +68,12 @@ class CLA:
         
         return [b[i][0]], w
 
+
 #---------------------------------------------------------------        
     def get_b(self,f):
         
         return self.diff_lists(range(self.mean.shape[0]), f)
+   
     
 #---------------------------------------------------------------    
     def compute_bi(self, c, bi):
@@ -84,11 +87,13 @@ class CLA:
             bi = bi[0]
             
         return bi
+ 
     
 #---------------------------------------------------------------
     def diff_lists(self,list1,list2):
         
         return list(set(list1) - set(list2))
+
 
 #---------------------------------------------------------------
     def get_matrices(self, f):
@@ -106,6 +111,7 @@ class CLA:
         
         return covarF, covarFB, meanF, wB
 
+
 #---------------------------------------------------------------
     def reduce_matrix(self, matrix, listX, listY):
         
@@ -119,6 +125,7 @@ class CLA:
          
         # Subset to just columns we want
         return matrix_[:, listY]
+ 
     
 #---------------------------------------------------------------
     def compute_lambda(self, covarF_inv, covarFB, meanF, wB, i, bi):
@@ -164,6 +171,7 @@ class CLA:
         lam2 = onesF.T @ lam3
         
         return float(((1 - lam1 + lam2) * c4[i] - c1 * (bi + lam3[i]))/c), bi
+ 
     
 #---------------------------------------------------------------
     def compute_w(self, covarF_inv, covarFB, meanF, wB):
@@ -205,6 +213,7 @@ class CLA:
          #wF *= (1 - np.sum(wB))/np.sum(wF)
          
          return wF, g
+
          
 #---------------------------------------------------------------
     def get_min_var(self):
@@ -216,6 +225,7 @@ class CLA:
         idx_min = np.argmin(var)
             
         return np.sqrt(var[idx_min]), self.w[idx_min]  
+ 
     
 #---------------------------------------------------------------    
     def golden_section(self, obj, a, b, **kwargs):
@@ -269,12 +279,13 @@ class CLA:
          else:
              
              return x2, sign * f2
-     
+
+        
 #---------------------------------------------------------------           
     def get_max_SR(self):
          # Get the max Sharpe ratio portfolio
          
-         #1) Compute the local max SR portfolio between any two neighbor turning points
+         #1) Compute the local max SR portfolio between any two neighboring turning points
          w_sr, sr = [], []
          
          if len(self.w) > 1:
@@ -308,6 +319,7 @@ class CLA:
          
          return sr[idx_max], w_sr[idx_max]
 
+
 #---------------------------------------------------------------
     def eval_SR(self, alpha, w0, w1):
         
@@ -319,6 +331,7 @@ class CLA:
         c = np.sqrt(((w.T @ self.covar) @ w)[0,0])
      
         return b/c
+   
     
 #---------------------------------------------------------------    
     def efficient_frontier(self, points):
@@ -326,7 +339,12 @@ class CLA:
         # Get the efficient frontier
         mu, sigma, weights = [], [], []
         
-        # Remove the 1, to avoid duplications
+        # Increase points if too small
+        if points < 3 * len(self.w):
+            
+            points = 3 * len(self.w)
+        
+        # Remove the 1 to avoid duplicates
         a = np.linspace(0, 1, int(points/len(self.w)))[:-1] 
         
         for i in range(len(self.w) - 1):
@@ -351,6 +369,7 @@ class CLA:
             sigma.extend([np.sqrt((w.T @ self.covar @ w)[0,0]) for w in w_vals])
             
         return mu, sigma, weights
+  
     
 #---------------------------------------------------------------
     def purge_numerical_error(self, tol):
