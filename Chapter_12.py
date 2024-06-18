@@ -48,7 +48,7 @@ class CombPurgedKFoldCV(_BaseKFold):
     
     def __init__(self, n_splits = 5, n_test_splits = 2, holding_dates = None, 
                  purge = pd.Timedelta(days = 0), embargo = pd.Timedelta(days = 0), 
-                 warm_up_end = None, fixed_width = None):
+                 warm_up_end = None, fixed_width = None, safe = False):
         
         if not isinstance(holding_dates, pd.Series)|isinstance(holding_dates, pd.DataFrame):
             
@@ -94,6 +94,9 @@ class CombPurgedKFoldCV(_BaseKFold):
         
         # Calculate number of paths
         self.path_count = (n_test_splits/n_splits) * comb(n_splits, n_test_splits)
+        
+        # Save save for get_n_splits
+        self.safe = safe
 
 
     # Create method to clean up train
@@ -195,6 +198,20 @@ class CombPurgedKFoldCV(_BaseKFold):
             else:
                 
                 yield train_idx, test_idx
+                
+
+    def get_n_splits(self, X, y = None, groups = None):
+        # Method called when fitting values, and throws an error since length of cv isn't n_splits
+
+        # If safe is true, simply count the number of splits by generating them
+        if self.safe:
+            
+            return len(list(self.split(X)))
+        
+        # IF safe is false is combintation; pay over estimate because of purge and embargo
+        else:
+            
+            return int(comb(self.n_splits, self.n_test_splits))
                 
 
 # =============================================================================
