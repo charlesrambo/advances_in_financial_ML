@@ -55,7 +55,6 @@ def get_beta_parts(x, y):
     return xx, xx_inv, xy    
     
 
-
 def get_betas(x, y):
     
     # Calculate parts of OLS formula
@@ -123,7 +122,7 @@ def get_bsadf(log_price, min_sample, constant, lags):
     # Adjust minimum sample so always invertible
     min_sample = max([x.shape[1], min_sample])
     
-    # It iterable of starting points
+    # Make iterable of starting points
     start_points = range(0, y.shape[0] - min_sample + 1)
     
     # Initialize list
@@ -139,7 +138,6 @@ def get_bsadf(log_price, min_sample, constant, lags):
         ADF.append(beta/beta_error)
     
     return np.nanmax(ADF)
-
 
 
 def get_brown_durban_evans(x, y, k):
