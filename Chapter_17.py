@@ -134,7 +134,7 @@ def get_bsadf(log_price, min_sample, constant, lags):
         x_sub, y_sub = x[start:], y[start:] 
         
         beta, beta_error = get_betas(x_sub, y_sub)
-        beta, beta_error = beta[0, 0], beta_error[0, 0]
+        beta, beta_error = beta[0, 0], beta_error[0]
         ADF.append(beta/beta_error)
     
     return np.nanmax(ADF)
