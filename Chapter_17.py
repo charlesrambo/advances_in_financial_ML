@@ -70,7 +70,7 @@ def get_betas(x, y):
     beta_var = err.T @ err/(x.shape[0] - x.shape[1]) * xx_inv
     
     # Calculate std of beta
-    beat_std = np.sqrt(beta_var)
+    beat_std = np.sqrt(np.diag(beta_var))
     
     return beta, beat_std
 
