@@ -1,4 +1,5 @@
 # Advances in Financial Machine Learning
+by Marcos López de Prado
 
 ## Table of Contents
 
