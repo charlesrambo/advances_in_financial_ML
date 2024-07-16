@@ -138,23 +138,26 @@ def calculate_frac_diff(df, d, threshold = None):
         # Get the particular price series
         series = df[[name]].ffill().dropna()
         
-        # Initialize series of values
-        diff_series = pd.Series(index = series.index[skip:])
-        
-        # Create function to calculate terms
-        calc_term = lambda i: (w[-(i + 1):, :].T @ series.loc[:series.index[i]].values)[0, 0]
-        
-        # Vectorize function
-        calc_term = np.vectorize(calc_term)
-        
-        # Compute terms
-        diff_series[diff_series.index] = calc_term(np.array(range(skip, series.shape[0])))
-        
-        # Replace non-finite values with np.nan
-        diff_series[~np.isfinite(diff_series)] = np.nan
-        
-        # Add series to dictionary
-        frac_diff_dict[name] = diff_series.copy()
+        if series.shape[0] > width:
+            
+            # Initialize series of values
+            diff_series = pd.Series(index = series.index[width:])
+            
+            # Create function to calculate terms
+            calc_term = lambda i: (w.T @ series.loc[series.index[i - width]:series.index[i]].values)[0, 0]
+            
+            # Compute terms
+            diff_series[diff_series.index] = [calc_term(i) for i in range(width, series.shape[0])]
+            
+            # Replace non-finite values with np.nan
+            diff_series[~np.isfinite(diff_series)] = np.nan
+            
+            # Add series to dictionary
+            frac_diff_dict[name] = diff_series.copy()
+            
+        else:
+            
+            frac_diff_dict[name] = pd.Series(index = df.index[width:], dtype = float)
     
     # Concatinate the results
     result = pd.concat(frac_diff_dict, axis = 1)
@@ -162,7 +165,7 @@ def calculate_frac_diff(df, d, threshold = None):
     return result
 
 
-def calculate_frac_diff_fixed(df, d, threshold = 1e-5):
+def calculate_frac_diff_fixed(df, d, size = None, threshold = 1e-5):
     """
     Lopez de Prado's fractional differencing with a fixed width. 
 
@@ -185,7 +188,7 @@ def calculate_frac_diff_fixed(df, d, threshold = 1e-5):
     """
     
     # Compute the weights
-    w = get_weights_frac_diff(d, threshold = threshold)
+    w = get_weights_frac_diff(d, size = size, threshold = threshold)
     
     # Get value of width minus 1
     width = w.shape[0] - 1
