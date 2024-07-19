@@ -50,7 +50,9 @@ def get_beta_parts(x, y):
     # Calculate parts of OLS formula
     xy = x.T @ y
     xx = x.T @ x
-    xx_inv = np.linalg.inv(xx)
+
+    # Use Moore-Penrose inverse	
+    xx_inv = np.linalg.pinv(xx)
 
     return xx, xx_inv, xy    
     
