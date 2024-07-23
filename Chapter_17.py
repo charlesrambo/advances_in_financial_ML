@@ -188,7 +188,7 @@ def get_bsadf(log_price, min_sample, regression = 'c', lags = 3):
     X, y = np_get_xy(log_price, regression = regression, lags = lags)
     
     # Following warning in statsmodels.tsa.stattools.adfuller
-    min_sample = max([int(2 * np.max(maxlag) + 9), min_sample])
+    min_sample = max([int(2 * np.max(lags) + 9), min_sample])
     
     # Make iterable of starting points
     start_points = range(0, y.shape[0] - min_sample + 1)
