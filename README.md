@@ -4,7 +4,7 @@ by Marcos López de Prado
 ## Table of Contents
 
 ### Preamble
-* Financial Machine Learning as a Distinct Subject
+* **Chapter 1:** Financial Machine Learning as a Distinct Subject
 
 ### Part I: Data Analysis
 * **Chapter 2:** Financial Data Structures
@@ -30,7 +30,8 @@ by Marcos López de Prado
 ### Part IV: Useful Financial Features
 * **Chapter 17:** Structural Breaks
 * **Chapter 18:** Entropy Features
-
+* **Chapter 19:** Microstructural Features
+* 
 ### Part V: High-Performance Computing Recipes
 * **Chapter 20:** Multiprocessing and Vectorization
 * **Chapter 21:** Brute Force and Quantum Computers
