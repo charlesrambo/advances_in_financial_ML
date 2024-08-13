@@ -35,4 +35,4 @@ by Marcos López de Prado
 ### Part V: High-Performance Computing Recipes
 * **Chapter 20:** Multiprocessing and Vectorization
 * **Chapter 21:** Brute Force and Quantum Computers
-* **Chapter 22:** Higher-Performance Computational Intelligence and Forecasting Technologies
+* **Chapter 22:** High-Performance Computational Intelligence and Forecasting Technologies
