@@ -31,7 +31,7 @@ by Marcos López de Prado
 * **Chapter 17:** Structural Breaks
 * **Chapter 18:** Entropy Features
 * **Chapter 19:** Microstructural Features
-* 
+
 ### Part V: High-Performance Computing Recipes
 * **Chapter 20:** Multiprocessing and Vectorization
 * **Chapter 21:** Brute Force and Quantum Computers
